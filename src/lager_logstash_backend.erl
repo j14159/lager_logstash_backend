@@ -127,22 +127,18 @@ code_change(_OldVsn, State, _Extra) ->
   Vsn = get_app_version(),
   {ok, State#state{node_version=Vsn}}.
 
-encode_json_event('mask', Node, Node_Role, Node_Version, Severity, Date, Time, Message, Metadata) ->
+encode_json_event(_, Node, Node_Role, Node_Version, Severity, Date, Time, Message, Metadata) ->
   DateTime = io_lib:format("~sT~s", [Date,Time]),
-  jiffy:encode({[
-                {<<"fields">>, 
-                    {[
-                        {<<"level">>, Severity},
-                        {<<"role">>, list_to_binary(Node_Role)},
-                        {<<"role_version">>, list_to_binary(Node_Version)},
-                        {<<"node">>, Node}
-                    ] ++ Metadata }
-                },
-                {<<"@timestamp">>, list_to_binary(DateTime)}, %% use the logstash timestamp
-                {<<"message">>, safe_list_to_binary(Message)},
-                {<<"type">>, <<"erlang">>}
-            ]
-  }).
+  jsx:encode([{<<"fields">>, [
+      {<<"level">>, Severity},
+      {<<"role">>, list_to_binary(Node_Role)},
+      {<<"role_version">>, list_to_binary(Node_Version)},
+      {<<"node">>, Node}
+    ] ++ Metadata},
+    {<<"@timestamp">>, list_to_binary(DateTime)}, %% use the logstash timestamp
+    {<<"message">>, safe_list_to_binary(Message)},
+    {<<"type">>, <<"erlang">>}
+  ]).
 
 safe_list_to_binary(L) when is_list(L) ->
   unicode:characters_to_binary(L);
